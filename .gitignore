@@ -1,7 +1,53 @@
+# ==========================================
+# 🌐 FRONTEND
+# ==========================================
 frontend/node_modules/
 frontend/dist/
 frontend/.env
+frontend/.next/
+frontend/.turbo/
+frontend/.cache/
 
+# ==========================================
+# ⚙️ BACKEND
+# ==========================================
 backend/node_modules/
+backend/dist/
 backend/build/
 backend/.env
+backend/prisma/dev.db
+
+# ==========================================
+# 🧱 COMUNES
+# ==========================================
+# Dependencias
+node_modules/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Entornos
+.env
+.env.local
+.env.production
+.env.development
+
+# Compilados y temporales
+dist/
+build/
+.DS_Store
+.cache/
+coverage/
+
+# IDEs / herramientas
+.vscode/
+.idea/
+*.swp
+
+# Railway / Docker / Otros
+*.tar
+*.zip
+*.log
