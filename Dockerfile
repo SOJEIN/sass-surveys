@@ -1,36 +1,35 @@
-# ========== deps ==========
-# Instalamos deps SIN correr postinstall (evitamos que "prisma generate" se ejecute
-# antes de que exista la carpeta prisma/schema.prisma).
 FROM node:22-alpine AS deps
 WORKDIR /app
+# Instalamos deps sin postinstall para evitar "prisma generate" antes de tiempo
 COPY backend/package*.json ./
 RUN npm ci --ignore-scripts
 
 # ========== build (TS -> JS) ==========
 FROM node:22-alpine AS build
 WORKDIR /app
-# Copiamos código completo del backend
+# Copiamos el código del backend
 COPY backend ./
 # Traemos node_modules del stage deps
 COPY --from=deps /app/node_modules ./node_modules
-# Compilamos TS -> JS y ahora sí generamos Prisma Client
-RUN npm run build && npx prisma generate
+# Solo compilamos TS -> JS (sin prisma generate)
+RUN npm run build
 
 # ========== runtime ==========
 FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Prisma en Alpine requiere OpenSSL en runtime
+# Prisma en Alpine requiere OpenSSL
 RUN apk add --no-cache openssl
 
-# Copiamos node_modules (CLI de prisma y @prisma/client ya están)
+# node_modules (incluye prisma CLI y @prisma/client como dependencia)
 COPY --from=deps /app/node_modules ./node_modules
-# Copiamos el build compilado
+# Código compilado
 COPY --from=build /app/dist ./dist
-# Copiamos carpeta prisma (schema y migrations si las tienes)
+# Carpeta prisma (schema + migrations si las tienes)
 COPY backend/prisma ./prisma
 
 EXPOSE 3000
-# Aplicamos migraciones y arrancamos Nest
-CMD ["sh", "-lc", "npx prisma migrate deploy && node dist/main.js"]
+
+# Generamos Prisma Client con las variables REALES (Railway), migramos y arrancamos
+CMD ["sh", "-lc", "npx prisma generate && npx prisma migrate deploy && node dist/main.js"]
