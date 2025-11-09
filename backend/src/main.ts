@@ -16,9 +16,22 @@ async function bootstrap() {
     }),
   );
 
+  // ← acepta lista separada por comas
+  const origins = (process.env.CORS_ORIGIN ?? 'http://localhost:4173')
+    .split(',')
+    .map((o) => o.trim());
+
   app.enableCors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin: (
+      origin: string | undefined,
+      cb: (err: Error | null, allow?: boolean) => void,
+    ) => {
+      if (!origin) return cb(null, true);
+      return cb(null, origins.includes(origin));
+    },
     credentials: true,
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
   const prismaService = app.get(PrismaService);
