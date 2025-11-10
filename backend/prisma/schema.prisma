@@ -15,57 +15,40 @@ model User {
   updatedAt DateTime @updatedAt
 }
 
-enum SurveyStatus {
-  DRAFT
-  PUBLISHED
-  ARCHIVED
-}
-
 model Survey {
   id             String       @id @default(cuid())
-  slug           String       @unique @db.VarChar(120) // único para URL pública (/public/surveys/:slug)
+  slug           String       @unique @db.VarChar(120)
   title          String       @db.VarChar(200)
-  description    String?      @db.Text
+  description    String?
   status         SurveyStatus @default(DRAFT)
-  isPublic       Boolean      @default(true) // por si más adelante hay encuestas privadas
-  allowAnonymous Boolean      @default(true) // útil cuando agreguemos respuestas
+  isPublic       Boolean      @default(true)
+  allowAnonymous Boolean      @default(true)
   startsAt       DateTime?
   endsAt         DateTime?
   publishedAt    DateTime?
-  settings       Json?        @db.JsonB // reservado para opciones futuras (tema, lógica, etc.)
+  settings       Json?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
-
-  //relaciones
-  questions Question[]
-  responses Response[]
+  questions      Question[]
+  responses      Response[]
 
   @@index([status])
   @@index([createdAt])
   @@map("surveys")
 }
 
-enum QuestionType {
-  SHORT_TEXT // respuesta corta
-  LONG_TEXT // párrafo
-  SINGLE_CHOICE // una sola opción (radio)
-  MULTIPLE_CHOICE // varias opciones (checkbox)
-  RATING // estrellas o escala (1-5)
-  NUMBER // valor numérico
-}
-
 model Option {
   id         String   @id @default(cuid())
   questionId String
-  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
   label      String   @db.VarChar(300)
   value      String?  @db.VarChar(200)
   order      Int      @default(0)
   isOther    Boolean  @default(false)
-  score      Int?     @db.Integer
+  score      Int?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   answers    Answer[]
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
   @@index([questionId])
   @@index([order])
@@ -75,20 +58,17 @@ model Option {
 model Question {
   id          String       @id @default(cuid())
   surveyId    String
-  survey      Survey       @relation(fields: [surveyId], references: [id], onDelete: Cascade)
   title       String       @db.VarChar(300)
-  description String?      @db.Text
+  description String?
   type        QuestionType @default(SHORT_TEXT)
   isRequired  Boolean      @default(false)
   order       Int          @default(0)
-  settings    Json?        @db.JsonB
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // 🔹 Relación 1:N con opciones
-  options Option[]
-  answers Answer[]
+  settings    Json?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  answers     Answer[]
+  options     Option[]
+  survey      Survey       @relation(fields: [surveyId], references: [id], onDelete: Cascade)
 
   @@index([surveyId])
   @@index([type])
@@ -97,23 +77,19 @@ model Question {
 }
 
 model Response {
-  id       String @id @default(cuid())
-  surveyId String
-  survey   Survey @relation(fields: [surveyId], references: [id], onDelete: Cascade)
-
-  respondentId String? @db.VarChar(120)
-  ipAddress    String? @db.VarChar(64)
-  userAgent    String? @db.VarChar(500)
-  locale       String? @db.VarChar(20)
-
-  startedAt   DateTime  @default(now())
-  submittedAt DateTime?
-  durationMs  Int?
-
-  answers Answer[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String    @id @default(cuid())
+  surveyId     String
+  respondentId String?   @db.VarChar(120)
+  ipAddress    String?   @db.VarChar(64)
+  userAgent    String?   @db.VarChar(500)
+  locale       String?   @db.VarChar(20)
+  startedAt    DateTime  @default(now())
+  submittedAt  DateTime?
+  durationMs   Int?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  answers      Answer[]
+  survey       Survey    @relation(fields: [surveyId], references: [id], onDelete: Cascade)
 
   @@index([surveyId])
   @@index([respondentId])
@@ -121,38 +97,39 @@ model Response {
   @@map("responses")
 }
 
-// --- Respuesta por pregunta dentro de un Response ---
 model Answer {
-  id         String   @id @default(cuid())
-  responseId String
-  response   Response @relation(fields: [responseId], references: [id], onDelete: Cascade)
-
-  questionId String
-  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-
-  // Soporte para TODOS los tipos:
-  // SHORT/LONG_TEXT
-  textValue String? @db.Text
-
-  // NUMBER / RATING
+  id          String   @id @default(cuid())
+  responseId  String
+  questionId  String
+  textValue   String?
   numberValue Float?
+  optionId    String?
+  optionIds   Json?
+  otherText   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  option      Option?  @relation(fields: [optionId], references: [id])
+  question    Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  response    Response @relation(fields: [responseId], references: [id], onDelete: Cascade)
 
-  // SINGLE_CHOICE
-  optionId String?
-  option   Option? @relation(fields: [optionId], references: [id], onDelete: SetNull)
-
-  // MULTIPLE_CHOICE (guardamos IDs de opciones elegidas)
-  optionIds Json? @db.JsonB // string[] de Option.id
-
-  // Si la opción fue "Otro (isOther=true)", almacenamos lo que escribió
-  otherText String? @db.Text
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([responseId, questionId]) // evita duplicar la misma pregunta en un envío
+  @@unique([responseId, questionId])
   @@index([responseId])
   @@index([questionId])
   @@index([optionId])
   @@map("answers")
+}
+
+enum SurveyStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum QuestionType {
+  SHORT_TEXT
+  LONG_TEXT
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+  RATING
+  NUMBER
 }

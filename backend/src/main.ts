@@ -18,7 +18,7 @@ async function bootstrap() {
   );
 
   // ← acepta lista separada por comas
-  const origins = (process.env.CORS_ORIGIN ?? 'http://localhost:5173')
+  const origins = (process.env.CORS_ORIGIN ?? 'http://localhost:5173/summary')
     .split(',')
     .map((o) => o.trim());
 

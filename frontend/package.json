@@ -13,10 +13,26 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@angular-devkit/core": "^20.3.9",
+    "@angular-devkit/schematics": "^20.3.9",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.5",
+    "@mui/material": "^7.3.5",
+    "@mui/x-data-grid": "^8.17.0",
+    "@reduxjs/toolkit": "^2.10.1",
+    "formik": "^2.4.8",
+    "framer-motion": "^12.23.24",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "react-redux": "^9.2.0",
+    "react-router": "^7.9.5",
+    "recharts": "^3.4.1",
+    "uuid": "^13.0.0",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@angular-devkit/schematics-cli": "^20.3.9",
     "@eslint/js": "^9.36.0",
     "@types/node": "^24.6.0",
     "@types/react": "^19.1.16",
