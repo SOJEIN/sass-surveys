@@ -5,6 +5,7 @@ const WS = "http://localhost:3000/ws";
 const SLUG = "encuesta-demo";
 
 type OptionSummary = { optionId: string; label?: string; count: number };
+
 type QuestionSummary =
   | {
       questionId: string;
@@ -35,11 +36,22 @@ type SummaryResponse = {
   questions: QuestionSummary[];
 };
 
+type SingleChoiceQuestion = {
+  questionId: string;
+  title: string;
+  type: "SINGLE_CHOICE";
+  options: OptionSummary[];
+  total?: number;
+  totalResponses?: number;
+};
+
+// (El type guard se usa inline en useMemo)
+
 async function fetchSurveyIdBySlug(slug: string) {
   const res = await fetch(`${API}/public/surveys/${slug}`);
   if (!res.ok) throw new Error("No se pudo obtener la encuesta");
   const survey = await res.json();
-  return { id: survey.id, title: survey.title as string };
+  return { id: survey.id as string, title: survey.title as string };
 }
 
 async function fetchSummaryById(id: string): Promise<SummaryResponse> {
@@ -54,53 +66,80 @@ export default function RealtimeSummary() {
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
   const [error, setError] = useState<string>("");
 
-  const firstChoiceQuestion = useMemo(
-    () =>
-      summary?.questions.find((q) => q.type === "SINGLE_CHOICE") as
-        | Extract<QuestionSummary, { type: "SINGLE_CHOICE" }>
-        | undefined,
-    [summary]
-  );
+  const firstChoiceQuestion = useMemo(() => {
+    return summary?.questions.find(
+      (q): q is SingleChoiceQuestion => q.type === "SINGLE_CHOICE"
+    );
+  }, [summary]);
 
+  // 1) Carga encuesta y summary inicial
   useEffect(() => {
-    let socket: any;
-
+    let cancelled = false;
     (async () => {
       try {
         const { id, title } = await fetchSurveyIdBySlug(SLUG);
+        if (cancelled) return;
         setSurveyId(id);
         setSurveyTitle(title);
-        setSummary(await fetchSummaryById(id));
-      } catch (e: any) {
-        setError(e?.message ?? "Error inicial");
-        return;
-      }
-
-      // @ts-ignore usamos la lib global cargada por CDN en index.html
-      socket = (window as any).io(WS, { transports: ["websocket"] });
-
-      socket.on("connect", () => {
-        // console.log('WS conectado', socket.id);
-      });
-
-      socket.on("survey:update", async (payload: any) => {
-        // si usas rooms por encuesta, aquí podrías filtrar por surveyId
-        if (!surveyId) return;
-        try {
-          const data = await fetchSummaryById(surveyId);
-          setSummary(data);
-        } catch (e: any) {
-          setError(e?.message ?? "Error refrescando summary");
+        const data = await fetchSummaryById(id);
+        if (cancelled) return;
+        setSummary(data);
+      } catch (e: unknown) {
+        if (!cancelled) {
+          const message = e instanceof Error ? e.message : String(e);
+          setError(message || "Error inicial");
         }
-      });
-
-      socket.on("connect_error", (err: any) => {
-        setError("WS: " + (err?.message ?? "connect_error"));
-      });
+      }
     })();
-
     return () => {
-      if (socket && socket.disconnect) socket.disconnect();
+      cancelled = true;
+    };
+  }, []);
+
+  // 2) Conexión WS (cuando ya tenemos surveyId)
+  useEffect(() => {
+    if (!surveyId) return;
+    type WindowWithIO = Window & {
+      io?: (
+        url: string,
+        opts?: unknown
+      ) => {
+        on: (event: string, cb: (...args: unknown[]) => void) => void;
+        disconnect?: () => void;
+      };
+    };
+
+    const w = globalThis as unknown as WindowWithIO;
+    const socket = w.io ? w.io(WS, { transports: ["websocket"] }) : null;
+
+    if (!socket) {
+      setError("WS: socket.io no disponible en window");
+      return;
+    }
+
+    // Conexión establecida
+    socket.on("connect", () => {});
+
+    // Evento cuando hay una actualización en la encuesta: refrescar summary
+    socket.on("survey:update", async () => {
+      try {
+        const data = await fetchSummaryById(surveyId);
+        setSummary(data);
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : String(e);
+        setError(message || "Error refrescando summary");
+      }
+    });
+
+    // Errores de conexión
+    socket.on("connect_error", (err: unknown) => {
+      const message = err instanceof Error ? err.message : String(err);
+      setError("WS: " + (message || "connect_error"));
+    });
+
+    // Cleanup: desconectar socket
+    return () => {
+      socket?.disconnect?.();
     };
   }, [surveyId]);
 
@@ -114,7 +153,7 @@ export default function RealtimeSummary() {
         <strong>Encuesta:</strong> {surveyTitle} ({surveyId})
       </div>
 
-      {firstChoiceQuestion && (
+      {firstChoiceQuestion?.type === "SINGLE_CHOICE" && (
         <div
           style={{
             border: "1px solid #eee",
@@ -127,7 +166,7 @@ export default function RealtimeSummary() {
             {firstChoiceQuestion.title}
           </h2>
           <ul style={{ margin: 0, paddingLeft: 18 }}>
-            {firstChoiceQuestion.options.map((opt) => (
+            {firstChoiceQuestion.options.map((opt: OptionSummary) => (
               <li key={opt.optionId}>
                 {opt.label ?? opt.optionId}: <strong>{opt.count}</strong>
               </li>
@@ -142,45 +181,96 @@ export default function RealtimeSummary() {
         </div>
       )}
 
-      {/* Render súper simple del resto de preguntas */}
+      {/* Render del resto de preguntas con tipado seguro */}
       {summary.questions
-        .filter((q) => q !== firstChoiceQuestion)
-        .map((q) => (
-          <div
-            key={q.questionId}
-            style={{
-              border: "1px solid #f2f2f2",
-              borderRadius: 12,
-              padding: 16,
-              marginBottom: 12,
-            }}
-          >
-            <div style={{ fontWeight: 600, marginBottom: 6 }}>{q.title}</div>
-            {q.type === "RATING" || q.type === "NUMBER" ? (
-              <div>
-                Promedio: <strong>{(q as any).average ?? 0}</strong> — Conteo:{" "}
-                <strong>{(q as any).count ?? 0}</strong>
-              </div>
-            ) : q.type === "SHORT_TEXT" || q.type === "LONG_TEXT" ? (
-              <div>
-                Respuestas: <strong>{(q as any).count}</strong>
-                <ul style={{ margin: 0, paddingLeft: 18 }}>
-                  {(q as any).samples?.map((t: string, idx: number) => (
-                    <li key={idx}>{t}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : (
-              <ul style={{ margin: 0, paddingLeft: 18 }}>
-                {(q as any).options?.map((o: any) => (
-                  <li key={o.optionId}>
-                    {o.label ?? o.optionId}: <strong>{o.count}</strong>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        ))}
+        .filter((q) => q.questionId !== firstChoiceQuestion?.questionId)
+        .map((q) => {
+          switch (q.type) {
+            case "RATING":
+            case "NUMBER": {
+              const item = q; // item ya es del tipo correcto por discriminación
+              return (
+                <div
+                  key={item.questionId}
+                  style={{
+                    border: "1px solid #f2f2f2",
+                    borderRadius: 12,
+                    padding: 16,
+                    marginBottom: 12,
+                  }}
+                >
+                  <div style={{ fontWeight: 600, marginBottom: 6 }}>
+                    {item.title}
+                  </div>
+                  <div>
+                    Promedio: <strong>{item.average ?? 0}</strong> — Conteo:{" "}
+                    <strong>{item.count ?? 0}</strong>
+                  </div>
+                </div>
+              );
+            }
+            case "SHORT_TEXT":
+            case "LONG_TEXT": {
+              const item = q;
+              return (
+                <div
+                  key={item.questionId}
+                  style={{
+                    border: "1px solid #f2f2f2",
+                    borderRadius: 12,
+                    padding: 16,
+                    marginBottom: 12,
+                  }}
+                >
+                  <div style={{ fontWeight: 600, marginBottom: 6 }}>
+                    {item.title}
+                  </div>
+                  <div>
+                    Respuestas: <strong>{item.count}</strong>
+                    <ul style={{ margin: 0, paddingLeft: 18 }}>
+                      {item.samples?.map((t, idx) => (
+                        <li key={`${item.questionId}-sample-${idx}`}>{t}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              );
+            }
+            case "SINGLE_CHOICE":
+            case "MULTIPLE_CHOICE": {
+              const item = q;
+              return (
+                <div
+                  key={item.questionId}
+                  style={{
+                    border: "1px solid #f2f2f2",
+                    borderRadius: 12,
+                    padding: 16,
+                    marginBottom: 12,
+                  }}
+                >
+                  <div style={{ fontWeight: 600, marginBottom: 6 }}>
+                    {item.title}
+                  </div>
+                  <ul style={{ margin: 0, paddingLeft: 18 }}>
+                    {item.options?.map((o: OptionSummary) => (
+                      <li key={o.optionId}>
+                        {o.label ?? o.optionId}: <strong>{o.count}</strong>
+                      </li>
+                    ))}
+                  </ul>
+                  {(item.total ?? item.totalResponses) != null && (
+                    <div style={{ marginTop: 8, fontSize: 12, opacity: 0.7 }}>
+                      Total respuestas: {item.total ?? item.totalResponses ?? 0}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+            default:
+              return null;
+          }
+        })}
     </div>
   );
 }

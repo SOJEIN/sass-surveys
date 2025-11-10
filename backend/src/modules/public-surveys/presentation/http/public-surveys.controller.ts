@@ -1,8 +1,9 @@
-// src/modules/public-surveys/presentation/http/public-surveys.controller.ts
 import { Body, Controller, Get, Param, Post, Req } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { GetPublicSurveyUseCase } from '../../application/use-cases/get-public-survey.usecase';
 import { SubmitResponseUseCase } from '../../application/use-cases/submit-response.usecase';
 
+@ApiTags('PublicSurveys')
 @Controller('public/surveys')
 export class PublicSurveysController {
   constructor(
@@ -20,8 +21,8 @@ export class PublicSurveysController {
   @Post(':slug/responses')
   async submit(
     @Param('slug') slug: string,
-    @Body() dto: any, // dto simple; la validación fuerte vive en el use-case
-    @Req() req: Request, // para capturar IP/UA si quieres enriquecer meta
+    @Body() dto: any,
+    @Req() req: Request,
   ) {
     const enriched = {
       ...dto,

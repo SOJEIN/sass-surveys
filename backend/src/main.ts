@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { PrismaService } from './prisma/prisma.service';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -33,6 +34,34 @@ async function bootstrap() {
     methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
+
+  // 🔒 Swagger solo en dev o si SWAGGER_ENABLE=true
+  const enableSwagger =
+    process.env.SWAGGER_ENABLE === 'true' ||
+    process.env.NODE_ENV !== 'production';
+
+  if (enableSwagger) {
+    const config = new DocumentBuilder()
+      .setTitle('SaaS Surveys API')
+      .setDescription('API docs para encuestas, respuestas y analytics')
+      .setVersion('1.0.0')
+      .addServer('/api')
+      .build();
+
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/docs', app, document);
+
+    // Opcional: exportar OpenAPI JSON
+    app
+      .getHttpAdapter()
+      .get('/api/openapi.json', (_req, res) => res.json(document));
+
+    logger.log('Swagger habilitado en /api/docs');
+  } else {
+    logger.log(
+      'Swagger deshabilitado (entorno producción sin SWAGGER_ENABLE=true)',
+    );
+  }
 
   const prismaService = app.get(PrismaService);
   await prismaService.enableShutdownHooks(app);

@@ -1,5 +1,6 @@
 import { Controller, Get, Param, NotFoundException } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import { ApiTags } from '@nestjs/swagger';
 
 type QType =
   | 'SHORT_TEXT'
@@ -41,14 +42,13 @@ type AnalyticsResult =
   | MultipleChoiceResult
   | NumericResult
   | TextResult;
-
+@ApiTags('Analytics')
 @Controller('analytics/surveys')
 export class AnalyticsController {
   constructor(private readonly prisma: PrismaClient) {}
 
   @Get(':id/summary')
   async summary(@Param('id') surveyId: string) {
-    // 1) Traer preguntas (y opciones para mapear nombres)
     const survey = await this.prisma.survey.findUnique({
       where: { id: surveyId },
       include: {
