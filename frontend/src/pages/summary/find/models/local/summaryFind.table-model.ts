@@ -1,41 +1,42 @@
-import type { GridColDef } from '@mui/x-data-grid';
-import type { IFindSummaryLocal } from './summaryFind.local-model';
+import type { GridColDef } from "@mui/x-data-grid";
+import type { IFindSummaryLocal } from "./summaryFind.local-model";
 
 export const columnsTableFindSummary: GridColDef<IFindSummaryLocal>[] = [
   {
-    field: 'title',
-    headerName: 'Título',
+    field: "nombre",
+    headerName: "Nombre",
     flex: 1,
-    minWidth: 250
+    minWidth: 250,
   },
   {
-    field: 'slug',
-    headerName: 'Slug',
-    width: 180
-  },
-  {
-    field: 'description',
-    headerName: 'Descripción',
+    field: "apellido",
+    headerName: "Apellido",
     flex: 1,
-    minWidth: 200
+    minWidth: 250,
   },
   {
-    field: 'status',
-    headerName: 'Estado',
-    width: 130,
-    valueFormatter: (value) => {
-      const statusMap = {
-        DRAFT: 'Borrador',
-        PUBLISHED: 'Publicado',
-        ARCHIVED: 'Archivado'
-      };
-      return statusMap[value as keyof typeof statusMap] || value;
-    }
+    field: "correo",
+    headerName: "Correo",
+    flex: 1,
+    minWidth: 250,
   },
   {
-    field: 'isPublic',
-    headerName: 'Público',
-    width: 100,
-    type: 'boolean'
-  }
+    field: "edad",
+    headerName: "Edad",
+    type: "number",
+    flex: 0.5,
+    minWidth: 100,
+  },
+  {
+    field: "comidaFavorita",
+    headerName: "Comida Favorita",
+    flex: 1,
+    minWidth: 200,
+  },
+  {
+    field: "genero",
+    headerName: "Género",
+    flex: 0.7,
+    minWidth: 150,
+  },
 ];

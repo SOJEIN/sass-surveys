@@ -1,13 +1,13 @@
-import RefreshIcon from '@mui/icons-material/Refresh';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
-import Paper from '@mui/material/Paper';
-import Typography from '@mui/material/Typography';
-import { DataGrid } from '@mui/x-data-grid';
-import { motion } from 'framer-motion';
-import { columnsTableFindSummary } from '../../models/local/summaryFind.table-model';
-import { useFindAllSummaryQuery } from '../../redux/query';
+import RefreshIcon from "@mui/icons-material/Refresh";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import { DataGrid } from "@mui/x-data-grid";
+import { motion } from "framer-motion";
+import { columnsTableFindSummary } from "../../models/local/summaryFind.table-model";
+import { useFindAllSummaryQuery } from "../../redux/query";
 
 function Grid() {
   const { data, isLoading, error, isFetching, refetch } =
@@ -23,16 +23,16 @@ function Grid() {
       <Paper
         elevation={0}
         sx={{
-          background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
-          border: '1px solid rgba(255,255,255,0.05)',
+          background: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",
+          border: "1px solid rgba(255,255,255,0.05)",
           borderRadius: 3,
-          overflow: 'hidden'
+          overflow: "hidden",
         }}
       >
         <Box
           sx={{
             p: 3,
-            borderBottom: '1px solid rgba(255,255,255,0.05)'
+            borderBottom: "1px solid rgba(255,255,255,0.05)",
           }}
         >
           <Box
@@ -50,7 +50,7 @@ function Grid() {
               startIcon={<RefreshIcon />}
               sx={{
                 borderRadius: 2,
-                textTransform: 'none'
+                textTransform: "none",
               }}
             >
               Refrescar
@@ -90,26 +90,26 @@ function Grid() {
               </Typography>
             </Box>
           ) : (
-            <Box sx={{ height: 600, width: '100%' }}>
+            <Box sx={{ height: 600, width: "100%" }}>
               <DataGrid
                 rows={data || []}
                 columns={columnsTableFindSummary}
                 pageSizeOptions={[5, 10, 25]}
                 initialState={{
-                  pagination: { paginationModel: { pageSize: 10, page: 0 } }
+                  pagination: { paginationModel: { pageSize: 10, page: 0 } },
                 }}
                 sx={{
-                  border: 'none',
-                  '& .MuiDataGrid-cell': {
-                    borderColor: 'rgba(255,255,255,0.05)'
+                  border: "none",
+                  "& .MuiDataGrid-cell": {
+                    borderColor: "rgba(255,255,255,0.05)",
                   },
-                  '& .MuiDataGrid-columnHeaders': {
-                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                    borderColor: 'rgba(255,255,255,0.05)'
+                  "& .MuiDataGrid-columnHeaders": {
+                    backgroundColor: "rgba(99, 102, 241, 0.1)",
+                    borderColor: "rgba(255,255,255,0.05)",
                   },
-                  '& .MuiDataGrid-footerContainer': {
-                    borderColor: 'rgba(255,255,255,0.05)'
-                  }
+                  "& .MuiDataGrid-footerContainer": {
+                    borderColor: "rgba(255,255,255,0.05)",
+                  },
                 }}
               />
             </Box>

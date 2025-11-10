@@ -1,16 +1,18 @@
-import type { IFindSummaryLocal } from '../../models/local/summaryFind.local-model';
-import type { IFindSummaryServer } from '../../models/server/summaryFind.server-model';
-import { v4 as uuidv4 } from 'uuid';
+import type { IFindSummaryLocal } from "../../models/local/summaryFind.local-model";
+import type { IFindSummaryServer } from "../../models/server/summaryFind.server-model";
 
 export const adapterToLocalSummaryFind = (
   response: IFindSummaryServer[]
 ): IFindSummaryLocal[] => {
   return response.map((item) => ({
-    id: uuidv4(),
-    slug: item.slug ?? '',
-    title: item.title ?? '',
-    description: item.description ?? '',
-    status: item.status ?? 'DRAFT',
-    isPublic: item.isPublic ?? false
+    nombre: item.nombre,
+    apellido: item.apellido,
+    correo: item.correo,
+    edad: item.edad,
+    comidaFavorita: item.comidaFavorita,
+    genero: item.genero,
+    createdAt: new Date(item.createdAt),
+    updatedAt: new Date(item.updatedAt),
+    id: item.id,
   }));
 };

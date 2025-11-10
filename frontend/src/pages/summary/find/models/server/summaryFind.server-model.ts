@@ -1,7 +1,11 @@
 export type IFindSummaryServer = {
-  slug?: string;
-  title?: string;
-  description?: string;
-  status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
-  isPublic?: boolean;
+  nombre: string;
+  apellido: string;
+  correo: string;
+  edad: number;
+  comidaFavorita: string;
+  genero: "Masculino" | "Femenino" | "Otro";
+  createdAt: string;
+  updatedAt: string;
+  id: string;
 };

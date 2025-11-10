@@ -1,25 +1,30 @@
-import { createBrowserRouter } from "react-router";
-import Layout from "../components/Layout";
-import HomeFine from "../pages/home/find/pages/HomeFine";
-import SummaryFind from "../pages/summary/find/pages/SummaryFind";
+import { createBrowserRouter } from 'react-router';
+import Layout from '../components/Layout';
+import HomeFine from '../pages/home/find/pages/HomeFine';
+import SummaryCreate from '../pages/summary/create/pages/SummaryCreate';
+import SummaryFind from '../pages/summary/find/pages/SummaryFind';
 
 export const router = createBrowserRouter([
   {
-    path: "/",
+    path: '/',
     element: <Layout />,
     children: [
       {
         index: true,
-        element: <HomeFine />,
+        element: <HomeFine />
       },
       {
-        path: "summary",
-        element: <SummaryFind />,
+        path: 'summary',
+        element: <SummaryFind />
       },
       {
-        path: "sass-surveys",
-        element: <SummaryFind />,
-      },
-    ],
+        path: 'sass-surveys',
+        element: <SummaryFind />
+      }
+    ]
   },
+  {
+    path: '/sass-surveys/create',
+    element: <SummaryCreate />
+  }
 ]);

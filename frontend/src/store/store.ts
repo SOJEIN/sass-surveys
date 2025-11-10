@@ -1,8 +1,8 @@
-import { configureStore } from '@reduxjs/toolkit';
-import { summaryFindApi } from '../pages/summary/find/redux/query';
+import { configureStore } from "@reduxjs/toolkit";
+import { baseSummaryApi } from "../pages/summary/shared/redux/query";
 
 export const store = configureStore({
-  reducer: { [summaryFindApi.reducerPath]: summaryFindApi.reducer },
+  reducer: { [baseSummaryApi.reducerPath]: baseSummaryApi.reducer },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(summaryFindApi.middleware)
+    getDefaultMiddleware().concat(baseSummaryApi.middleware),
 });

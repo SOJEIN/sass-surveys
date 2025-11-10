@@ -1,4 +1,4 @@
-export type IFindSummaryLocal = {
+export type ICreateSummaryServerProps = {
   nombre: string;
   apellido: string;
   correo: string;
