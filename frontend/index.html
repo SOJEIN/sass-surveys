@@ -1,13 +1,16 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+    <title>SaaS Surveys</title>
+
+    <!-- ✅ Cargar Socket.IO cliente ANTES del bundle -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   </head>
   <body>
     <div id="root"></div>
+    <!-- Tu bundle de Vite -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

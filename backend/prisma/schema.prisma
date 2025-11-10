@@ -14,3 +14,145 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+enum SurveyStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Survey {
+  id             String       @id @default(cuid())
+  slug           String       @unique @db.VarChar(120) // único para URL pública (/public/surveys/:slug)
+  title          String       @db.VarChar(200)
+  description    String?      @db.Text
+  status         SurveyStatus @default(DRAFT)
+  isPublic       Boolean      @default(true) // por si más adelante hay encuestas privadas
+  allowAnonymous Boolean      @default(true) // útil cuando agreguemos respuestas
+  startsAt       DateTime?
+  endsAt         DateTime?
+  publishedAt    DateTime?
+  settings       Json?        @db.JsonB // reservado para opciones futuras (tema, lógica, etc.)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  //relaciones
+  questions Question[]
+  responses Response[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("surveys")
+}
+
+enum QuestionType {
+  SHORT_TEXT // respuesta corta
+  LONG_TEXT // párrafo
+  SINGLE_CHOICE // una sola opción (radio)
+  MULTIPLE_CHOICE // varias opciones (checkbox)
+  RATING // estrellas o escala (1-5)
+  NUMBER // valor numérico
+}
+
+model Option {
+  id         String   @id @default(cuid())
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  label      String   @db.VarChar(300)
+  value      String?  @db.VarChar(200)
+  order      Int      @default(0)
+  isOther    Boolean  @default(false)
+  score      Int?     @db.Integer
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  answers    Answer[]
+
+  @@index([questionId])
+  @@index([order])
+  @@map("options")
+}
+
+model Question {
+  id          String       @id @default(cuid())
+  surveyId    String
+  survey      Survey       @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  title       String       @db.VarChar(300)
+  description String?      @db.Text
+  type        QuestionType @default(SHORT_TEXT)
+  isRequired  Boolean      @default(false)
+  order       Int          @default(0)
+  settings    Json?        @db.JsonB
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 🔹 Relación 1:N con opciones
+  options Option[]
+  answers Answer[]
+
+  @@index([surveyId])
+  @@index([type])
+  @@index([order])
+  @@map("questions")
+}
+
+model Response {
+  id       String @id @default(cuid())
+  surveyId String
+  survey   Survey @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+
+  respondentId String? @db.VarChar(120)
+  ipAddress    String? @db.VarChar(64)
+  userAgent    String? @db.VarChar(500)
+  locale       String? @db.VarChar(20)
+
+  startedAt   DateTime  @default(now())
+  submittedAt DateTime?
+  durationMs  Int?
+
+  answers Answer[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([surveyId])
+  @@index([respondentId])
+  @@index([createdAt])
+  @@map("responses")
+}
+
+// --- Respuesta por pregunta dentro de un Response ---
+model Answer {
+  id         String   @id @default(cuid())
+  responseId String
+  response   Response @relation(fields: [responseId], references: [id], onDelete: Cascade)
+
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  // Soporte para TODOS los tipos:
+  // SHORT/LONG_TEXT
+  textValue String? @db.Text
+
+  // NUMBER / RATING
+  numberValue Float?
+
+  // SINGLE_CHOICE
+  optionId String?
+  option   Option? @relation(fields: [optionId], references: [id], onDelete: SetNull)
+
+  // MULTIPLE_CHOICE (guardamos IDs de opciones elegidas)
+  optionIds Json? @db.JsonB // string[] de Option.id
+
+  // Si la opción fue "Otro (isOther=true)", almacenamos lo que escribió
+  otherText String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([responseId, questionId]) // evita duplicar la misma pregunta en un envío
+  @@index([responseId])
+  @@index([questionId])
+  @@index([optionId])
+  @@map("answers")
+}
