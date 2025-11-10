@@ -1,12 +1,11 @@
 import { Module } from '@nestjs/common';
+import { SummaryAllToUsersModule } from './modules/summary-all-to-users/summary-all-to-users.module';
 import { PrismaModule } from './prisma/prisma.module';
-import { PublicSurveysModule } from './modules/public-surveys/presentation/http/public-surveys.module';
-import { AnalyticsModule } from './modules/analytics/presentation/http/analytics.module';
-import { RealtimeModule } from './realtime/realtime.module';
 import { DebugWsController } from './realtime/debug-ws.controller';
+import { RealtimeModule } from './realtime/realtime.module';
 
 @Module({
-  imports: [PrismaModule, PublicSurveysModule, AnalyticsModule, RealtimeModule],
+  imports: [PrismaModule, RealtimeModule, SummaryAllToUsersModule],
   controllers: [DebugWsController],
 })
 export class AppModule {}

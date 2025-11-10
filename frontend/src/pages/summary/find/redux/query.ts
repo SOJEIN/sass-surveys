@@ -11,7 +11,7 @@ export const summaryFindApi = createApi({
   endpoints: ({ query }) => ({
     findAllSummary: query<IFindSummaryLocal[], void>({
       query: () => ({
-        url: import.meta.env.VITE_API_URL + "public/surveys/encuesta-demo",
+        url: import.meta.env.VITE_API_URL + "summary-all-to-users",
         method: "GET",
       }),
       transformResponse: (response: IFindSummaryServer[]) => {

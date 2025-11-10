@@ -1,8 +1,8 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { AppModule } from './app.module';
 import { PrismaService } from './prisma/prisma.service';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -17,23 +17,38 @@ async function bootstrap() {
     }),
   );
 
-  // ← acepta lista separada por comas
-  const origins = (process.env.CORS_ORIGIN ?? 'http://localhost:5173/summary')
-    .split(',')
-    .map((o) => o.trim());
+  // Configuración de CORS - permisivo en desarrollo, restrictivo en producción
+  const isDevelopment = process.env.NODE_ENV !== 'production';
 
-  app.enableCors({
-    origin: (
-      origin: string | undefined,
-      cb: (err: Error | null, allow?: boolean) => void,
-    ) => {
-      if (!origin) return cb(null, true);
-      return cb(null, origins.includes(origin));
-    },
-    credentials: true,
-    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  });
+  if (isDevelopment) {
+    // En desarrollo: permitir todos los orígenes
+    app.enableCors({
+      origin: true, // Permite cualquier origen en desarrollo
+      credentials: true,
+      methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    });
+    logger.log('CORS habilitado para todos los orígenes (modo desarrollo)');
+  } else {
+    // En producción: lista específica de orígenes
+    const origins = (process.env.CORS_ORIGIN ?? 'http://localhost:5173')
+      .split(',')
+      .map((o) => o.trim());
+
+    app.enableCors({
+      origin: (
+        origin: string | undefined,
+        cb: (err: Error | null, allow?: boolean) => void,
+      ) => {
+        if (!origin) return cb(null, true);
+        return cb(null, origins.includes(origin));
+      },
+      credentials: true,
+      methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    });
+    logger.log(`CORS habilitado para: ${origins.join(', ')}`);
+  }
 
   // 🔒 Swagger solo en dev o si SWAGGER_ENABLE=true
   const enableSwagger =
